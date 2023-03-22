@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-//Initialize Macro
+/*==============INITIALIZE MACRO==============*/
 #define CHECK_ITEMS_IN_CART(ShoppingCart, order) (ShoppingCart & (1 << order))
 
-//Initialize Constant
+/*==============INITIALIZE CONSTANT==============*/
 typedef enum{
     SHIRT       = 1 << 0,   //0b00000001
     PANTS       = 1 << 1,   //0b00000010
@@ -18,12 +18,13 @@ typedef enum{
 
 const uint8_t *listPersonalItems[] = {"SHIRT", "PANTS", "SKIRT", "DRESS", "RING", "BRACELET", "SHOES", "BAG"};
 
-//Initialize Function
+/*==============INITIALIZE FUNCTION==============*/
 void add_to_shopping_cart(uint8_t *ShopingCart, PersonalItems Items);
 void remove_from_shopping_cart(uint8_t *ShopingCart, PersonalItems Items);
 void show_shopping_cart(uint8_t ShoppingCart);
 void find_shopping_cart(uint8_t ShoppingCart, PersonalItems Items);
 
+/*==============USER CODE==============*/
 void main(){
     uint8_t ShoppingCart;
 
@@ -33,6 +34,7 @@ void main(){
     find_shopping_cart(ShoppingCart, BAG|RING|SHOES);
 }
 
+/*==============FUNCTION==============*/
 void add_to_shopping_cart(uint8_t *ShopingCart, PersonalItems Items){
     *ShopingCart |= Items;
 }
