@@ -53,16 +53,14 @@ void show_shopping_cart(uint8_t ShoppingCart){
 }
 
 void find_shopping_cart(uint8_t ShoppingCart, PersonalItems Items){
+    ShoppingCart &= Items;
     for(int i = 0; i<8; i++){
         //Check each bit in Items from right to left
-        if(Items & 1){
-            if(CHECK_ITEMS_IN_CART(ShoppingCart, i)){
-                printf("\nShopping cart has %s", listPersonalItems[i]);
-            }
-            else{
-                printf("\nShopping cart doesn't have %s", listPersonalItems[i]);
-            }
+        if(CHECK_ITEMS_IN_CART(ShoppingCart, i) && CHECK_ITEMS_IN_CART(Items, i)){
+            printf("\nShopping cart has %s", listPersonalItems[i]);
         }
-        Items = Items >> 1;
+        else if(CHECK_ITEMS_IN_CART(ShoppingCart, i) || CHECK_ITEMS_IN_CART(Items, i)){
+            printf("\nShopping cart doesn't have %s", listPersonalItems[i]);
+        }
     }
 }
