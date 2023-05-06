@@ -2,7 +2,7 @@
  * spi.h
  *
  *  Created on: May 5, 2023
- *      Author: a
+ *      Author: Long
  */
 
 #ifndef INC_SPI_H_
