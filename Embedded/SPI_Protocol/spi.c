@@ -21,6 +21,7 @@ static uint16_t ssPin;
 
 static void spi_transmitByte(uint8_t byte);
 static uint8_t spi_receiveByte();
+static void MX_GPIO_Init(void);
 
 /**
   * @brief GPIO Initialization Function
@@ -115,13 +116,25 @@ void spi_slaveInit(GPIO_TypeDef* SPI_PORT, uint16_t SCLK_PIN, uint16_t MOSI_PIN,
   * @retval None
   */
 static void spi_transmitByte(uint8_t byte){
-	for(uint8_t i = 0; i < 8; i++){
-		//transmit from 2^0 bit to 2^7 bit
-		HAL_GPIO_WritePin(spiPort, mosiPin, (byte >> i) & 1);
-		HAL_Delay(T_OFF);
-		HAL_GPIO_WritePin(spiPort, sclkPin, 1);
-		HAL_Delay(T_ON);
-		HAL_GPIO_WritePin(spiPort, sclkPin, 0);
+	if(isMaster){
+		for(uint8_t i = 0; i < 8; i++){
+			//transmit from 2^0 bit to 2^7 bit
+			HAL_GPIO_WritePin(spiPort, mosiPin, (byte >> i) & 1);
+			HAL_Delay(T_OFF);
+			HAL_GPIO_WritePin(spiPort, sclkPin, 1);
+			HAL_Delay(T_ON);
+			HAL_GPIO_WritePin(spiPort, sclkPin, 0);
+		}
+	} else {
+		for(uint8_t i = 0; i < 8; i++){
+			while(!HAL_GPIO_ReadPin(spiPort, sclkPin) && !HAL_GPIO_ReadPin(spiPort, ssPin)){
+				HAL_GPIO_WritePin(spiPort, misoPin, (byte >> i) & 1);
+			}
+			while(HAL_GPIO_ReadPin(spiPort, sclkPin) && !HAL_GPIO_ReadPin(spiPort, ssPin));
+			if(HAL_GPIO_ReadPin(spiPort, ssPin)){
+				return;
+			}
+		}
 	}
 }
 
@@ -143,15 +156,22 @@ void spi_transmitData(uint8_t* data){
 			spi_transmitByte(*(data + i));
 		}
 		HAL_GPIO_WritePin(spiPort, ssPin, 1);
+	}else{
+		while(!HAL_GPIO_ReadPin(spiPort, ssPin)){
+			unsigned int i = 0;
+
+			while(!HAL_GPIO_ReadPin(spiPort, ssPin) && i <= dataSize)
+				spi_transmitByte(*(data + i++));
+		}
 	}
 }
 
 /**
-  * @brief 	Receive A String
+  * @brief 	Receive A String For Slave MCU
   * @param  None
   * @retval A String Which is Transmitted
   */
-uint8_t* spi_receiveData(){
+uint8_t* spi_slaveReceiveData(){
 
 	unsigned int dataSize = 1;
 	uint8_t* data = (uint8_t*) malloc(1 * sizeof(uint8_t));
@@ -168,6 +188,26 @@ uint8_t* spi_receiveData(){
 }
 
 /**
+  * @brief 	Receive A String For Master MCU
+  * @param  dataSize: size of data which is transmitted from slave mcu
+  * @retval A String Which is Transmitted
+  */
+uint8_t* spi_masterReceiveData(uint8_t dataSize){
+	uint8_t* data = (uint8_t*) malloc(dataSize * sizeof(uint8_t));
+
+	if (isMaster){
+		HAL_GPIO_WritePin(spiPort, ssPin|sclkPin, 0);
+		for(uint8_t i = 0; i <= dataSize; i++){
+			*(data + i) = spi_receiveByte();
+		}
+		HAL_GPIO_WritePin(spiPort, ssPin, 1);
+		uint8_t* rxData = data;
+		free(data);
+		return rxData;
+	}
+}
+
+/**
   * @brief 	Receive A Byte
   * @param  None
   * @retval A Byte Which is Transmitted
@@ -175,18 +215,29 @@ uint8_t* spi_receiveData(){
 static uint8_t spi_receiveByte(){
 	uint8_t data = 0;
 	uint8_t powerOf2 = 1;
-
-	for (uint8_t i = 0; i < 8; i++){
-
-		while(!HAL_GPIO_ReadPin(spiPort, sclkPin)){
-			if(HAL_GPIO_ReadPin(spiPort, ssPin)){
-				return ' ';
-			}
+	if(isMaster){
+		for (uint8_t i = 0; i < 8; i++){
+			HAL_Delay(T_OFF);
+			HAL_GPIO_WritePin(spiPort, sclkPin, 1);
+			HAL_Delay(T_ON);
+			data += powerOf2 * HAL_GPIO_ReadPin(spiPort, misoPin);
+			powerOf2 *= 2;
+			HAL_GPIO_WritePin(spiPort, sclkPin, 0);
 		}
-		data += powerOf2 * HAL_GPIO_ReadPin(spiPort, mosiPin);
-		powerOf2 *= 2;
-		while(HAL_GPIO_ReadPin(spiPort, sclkPin));
+		return data;
+	} else {
+		for (uint8_t i = 0; i < 8; i++){
 
+			while(!HAL_GPIO_ReadPin(spiPort, sclkPin)){
+				if(HAL_GPIO_ReadPin(spiPort, ssPin)){
+					return ' ';
+				}
+			}
+			data += powerOf2 * HAL_GPIO_ReadPin(spiPort, mosiPin);
+			powerOf2 *= 2;
+			while(HAL_GPIO_ReadPin(spiPort, sclkPin));
+
+		}
+		return data;
 	}
-	return data;
 }
