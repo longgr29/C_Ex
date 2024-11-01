@@ -3,7 +3,7 @@
 
   -Trong vi điều khiển gồm 3 phân vùng bộ nhớ chính: ngoại vi, SRAM, Flash.
 
-  -Flash là bộ nhớ có khả năng giữ lại dữ liệu đã được ghi khi không có điện. Do đó nó là nơi lưu chương trình.
+  -Flash memory (or ROM) là bộ nhớ có khả năng giữ lại dữ liệu đã được ghi khi không có điện. Do đó nó là nơi lưu chương trình.
 
   -RAM là bộ nhớ được sử dụng để lưu trữ dữ liệu tạm thời, dữ liệu sẽ bị mất khi không có điện. Ưu điểm của nó là tốc độ đọc ghi nhanh hơn nhiều so với các loại bộ nhớ khác nên nó là nơi thực thi chương trình.
 
